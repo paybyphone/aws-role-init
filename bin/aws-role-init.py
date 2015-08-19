@@ -43,12 +43,15 @@ class AwsRoleInit:
 
     def output_env(self):
         """Output the session data as environment variables (bash only currently)"""
+        # NOTE: AWS_SECURITY_TOKEN is added to support boto 2
         print textwrap.dedent("""\
         export AWS_ACCESS_KEY_ID={0}
         export AWS_SECRET_ACCESS_KEY={1}
         export AWS_SESSION_TOKEN={2}
+        export AWS_SECURITY_TOKEN={3}
         """.format(self.sts_session['Credentials']['AccessKeyId'],
             self.sts_session['Credentials']['SecretAccessKey'],
+            self.sts_session['Credentials']['SessionToken'],
             self.sts_session['Credentials']['SessionToken']))
 
 if __name__ == '__main__':
