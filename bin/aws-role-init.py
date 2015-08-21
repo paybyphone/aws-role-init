@@ -4,6 +4,7 @@
 # you to assume the role.
 
 import boto3
+import botocore.exceptions
 import argparse
 import sys
 import textwrap
@@ -20,16 +21,7 @@ class AwsRoleInit:
 
     def __init__(self, role_session_name, role_arn, mfa_serial=None, mfa_token=None):
         """Set up boto, etc to get the object ready"""
-        try:
-            self.sts_connection = boto3.client('sts')
-        except boto.exception.NoAuthHandlerFound:
-            print textwrap.dedent("""\
-            ERROR: AWS config not set up properly.
-            See http://boto3.readthedocs.org/en/latest/guide/quickstart.html or
-            http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
-            for details on how to set up boto and the AWS cli for use.
-            """)
-            sys.exit(1)
+        self.sts_connection = boto3.client('sts')
         self.role_session_name = role_session_name
         self.role_arn = role_arn
         self.mfa_serial = mfa_serial
@@ -37,9 +29,18 @@ class AwsRoleInit:
 
     def assume_role(self):
         """Assume the supplied role and populate the session data."""
-        self.sts_session = self.sts_connection.assume_role(RoleArn=self.role_arn,
-            RoleSessionName=self.role_session_name, SerialNumber=self.mfa_serial,
-            TokenCode=self.mfa_token)
+        try:
+            self.sts_session = self.sts_connection.assume_role(RoleArn=self.role_arn,
+                RoleSessionName=self.role_session_name, SerialNumber=self.mfa_serial,
+                TokenCode=self.mfa_token)
+        except botocore.exceptions.NoCredentialsError:
+            print textwrap.dedent("""\
+            ERROR: AWS config not set up properly.
+            See http://boto3.readthedocs.org/en/latest/guide/quickstart.html or
+            http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+            for details on how to set up boto and the AWS cli for use.
+            """)
+            sys.exit(1)
 
     def output_env(self):
         """Output the session data as environment variables (bash only currently)"""
