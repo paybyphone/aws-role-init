@@ -30,9 +30,13 @@ class AwsRoleInit:
     def assume_role(self):
         """Assume the supplied role and populate the session data."""
         try:
-            self.sts_session = self.sts_connection.assume_role(RoleArn=self.role_arn,
-                RoleSessionName=self.role_session_name, SerialNumber=self.mfa_serial,
-                TokenCode=self.mfa_token)
+            if self.mfa_serial == None or self.mfa_token == None:
+                self.sts_session = self.sts_connection.assume_role(
+                    RoleArn=self.role_arn, RoleSessionName=self.role_session_name)
+            else:
+                self.sts_session = self.sts_connection.assume_role(RoleArn=self.role_arn,
+                    RoleSessionName=self.role_session_name, SerialNumber=self.mfa_serial,
+                    TokenCode=self.mfa_token)
         except botocore.exceptions.NoCredentialsError:
             print textwrap.dedent("""\
             ERROR: AWS config not set up properly.
